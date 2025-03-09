@@ -1,0 +1,106 @@
+/* About Section */
+.about {
+    background: linear-gradient(135deg, #3e09b0, #fefefe); /* Matching header/footer */
+    color: rgb(34, 19, 60);
+    text-align: center;
+    padding: 50px 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.about h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 10px rgba(255, 255, 255, 0.3);
+}
+
+.about p {
+    font-size: 1.2rem;
+    max-width: 700px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    padding: 0 15px;
+    opacity: 0.9;
+}
+
+/* Contact Form */
+.contact-form {
+    background: rgba(68, 13, 102, 0.1);
+    padding: 25px;
+    border-radius: 15px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0px 8px 20px rgba(255, 255, 255, 0.2);
+}
+
+.contact-form label {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 95%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    outline: none;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.contact-form textarea {
+    min-height: 120px;
+    resize: none;
+}
+
+/* Submit Button */
+.contact-form button {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    background: #ff3e6c;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.contact-form button:hover {
+    background: white;
+    color: #ff3e6c;
+    box-shadow: 0px 6px 15px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .about h2 {
+        font-size: 2rem;
+    }
+    
+    .about p {
+        font-size: 1.1rem;
+    }
+
+    .contact-form {
+        padding: 20px;
+    }
+}

@@ -1,0 +1,17 @@
+body {
+    font-family: "Arial", sans-serif;
+    background: #f4f4f4;
+    text-align: center;
+  }
+
+
+  .upload-section {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  .slider img {
+    width: 80%;
+    border-radius: 10px;
+  }
+  

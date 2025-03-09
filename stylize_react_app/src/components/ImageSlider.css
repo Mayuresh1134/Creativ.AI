@@ -1,0 +1,39 @@
+
+.slider-container {
+    background: linear-gradient(135deg, #3e09b0, #fefefe); /* Matching header/footer */
+
+    width: 100%;
+    height: 300pt;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.slider-image {
+    width: 100%; /* Reduce size */
+    height: 300pt;
+    align-items: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Dots Below Image */
+.dots-container {
+    margin-top: -30px;
+    display: flex;
+    gap: 8px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    background-color: rgb(166, 137, 191);
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.active-dot {
+    background-color: rgb(28, 5, 29);
+    transform: scale(1.2);
+}

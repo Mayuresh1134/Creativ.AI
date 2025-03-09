@@ -1,0 +1,65 @@
+.upload-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(135deg, #3b1e66, #9d85c5);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+    transition: 0.3s ease-in-out;
+    width: 250px;
+}
+
+.upload-label {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.upload-box {
+    position: relative;
+    text-align: center;
+}
+
+.upload-input {
+    display: none; /* Hide default file input */
+}
+
+.upload-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.upload-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.upload-icon {
+    font-size: 1.2rem;
+}
+
+.upload-preview {
+    width: 100px;
+    height: 100px;
+    margin-top: 10px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.4);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
