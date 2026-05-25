@@ -19,7 +19,7 @@ app.config["RESULT_FOLDER"] = RESULT_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
-hub_handle = "https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/2"
+hub_handle = "https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/1"
 hub_module = hub.load(hub_handle)
 
 def load_image(image_path, image_size=(512, 512)):
