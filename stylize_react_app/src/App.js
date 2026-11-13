@@ -1,32 +1,31 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import StyleTransfer from "./pages/StyleTransfer";
-import About from "./pages/About";
-import "./styles.css";
 import Footer from "./components/Footer";
-import Cartoonize from "./pages/Cartoonize";
-
+import Home from "./pages/Home";
+import Studio from "./pages/Studio";
+import About from "./pages/About";
+import tools from "./tools";
+import "./styles.css";
 
 function App() {
   return (
-    <div className="app-container">
-      <main className="main-content">
-        <Router>
-          <Navbar />
+    <Router>
+      <div className="app">
+        <Navbar />
+        <main className="app-main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/style-transfer" element={<StyleTransfer />} />
-            <Route path="/cartoonize" element={<Cartoonize />} />
+            {tools.map((tool) => (
+              <Route key={tool.id} path={tool.path} element={<Studio tool={tool} />} />
+            ))}
             <Route path="/about" element={<About />} />
+            <Route path="*" element={<Home />} />
           </Routes>
-          <Footer />
-        </Router>
-      </main>
-      
-    </div>
-    
+        </main>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

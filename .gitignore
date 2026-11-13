@@ -1,1 +1,11 @@
 backend/ghibli.py
+
+# User uploads, generated results and downloaded model weights
+backend/static/uploads/
+backend/static/results/
+backend/models/
+
+__pycache__/
+*.pyc
+venv/
+.venv/

@@ -1,18 +1,28 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import "./Navbar.css";
+import { Link, NavLink, useLocation } from "react-router-dom";
+import tools from "../tools";
 
 const Navbar = () => {
+  const { pathname } = useLocation();
+  const inStudio = tools.some((tool) => tool.path === pathname);
+
   return (
-    <nav className="navbar">
-      <h1 className="logo">Creativ.AI</h1>
-      <ul className="nav-links">
-        <li><Link to="/">Home</Link></li>
-        <li><Link to="/style-transfer">Style Transfer</Link></li>
-        <li><Link to="/cartoonize">Cartoonize</Link></li>
-        <li><Link to="/about">About Us</Link></li>
-      </ul>
-    </nav>
+    <header className="navbar">
+      <div className="navbar-inner">
+        <Link to="/" className="logo">
+          Creativ<span className="logo-dot">.</span>AI
+        </Link>
+        <nav aria-label="Main">
+          <ul className="nav-links">
+            <li><NavLink to="/" end>Home</NavLink></li>
+            <li>
+              <Link to={tools[0].path} className={inStudio ? "active" : undefined}>Studio</Link>
+            </li>
+            <li><NavLink to="/about">About</NavLink></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
   );
 };
 

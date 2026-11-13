@@ -1,94 +1,154 @@
-from flask import Flask, request, jsonify
-from werkzeug.utils import secure_filename
 import os
-import tensorflow as tf
-import tensorflow_hub as hub
-import numpy as np
-import cv2
-from PIL import Image
+import time
+import uuid
+
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+from PIL import UnidentifiedImageError
+from werkzeug.exceptions import RequestEntityTooLarge
 
-app = Flask(__name__)
-CORS(app)
+import effects
+from models import ModelUnavailable
 
-UPLOAD_FOLDER = "static/uploads"
-RESULT_FOLDER = "static/results"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+RESULT_FOLDER = os.path.join(BASE_DIR, "static", "results")
+
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+MAX_UPLOAD_MB = 16
+RESULT_MAX_AGE_SECONDS = 60 * 60  # results are deleted after an hour
+
+app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"))
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["RESULT_FOLDER"] = RESULT_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
+CORS(app)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
-hub_handle = "https://tfhub.dev/google/magenta/arbitrary-image-stylization-v1-256/1"
-hub_module = hub.load(hub_handle)
 
-def load_image(image_path, image_size=(512, 512)):
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_image(img, channels=3, dtype=tf.float32)[tf.newaxis, ...]
-    img = tf.image.resize(img, image_size)
-    return img
+class UploadError(ValueError):
+    """The request is missing a file or the file is not a usable image."""
 
-def stylize_image(content_path, style_path):
-    content_image = load_image(content_path)
-    style_image = load_image(style_path, image_size=(256, 256))
-    
-    outputs = hub_module(tf.constant(content_image), tf.constant(style_image))
-    stylized_image = outputs[0]
 
-    stylized_image = np.array(stylized_image[0] * 255, dtype=np.uint8)
-    result_path = os.path.join(app.config["RESULT_FOLDER"], "stylized_output.png")
-    Image.fromarray(stylized_image).save(result_path)
+def save_upload(field):
+    """Save an uploaded file under a random name and return its path."""
+    file = request.files.get(field)
+    if file is None or not file.filename:
+        raise UploadError(f"Missing file: {field}")
 
-    return result_path
+    extension = os.path.splitext(file.filename)[1].lower()
+    if extension not in ALLOWED_EXTENSIONS:
+        allowed = ", ".join(sorted(e.lstrip(".") for e in ALLOWED_EXTENSIONS))
+        raise UploadError(f"Unsupported file type. Use one of: {allowed}.")
 
-def cartoonize_image(image_path):
-    img = cv2.imread(image_path)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    blurred = cv2.medianBlur(gray, 7)
-    edges = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 9, 9)
-    
-    color = cv2.bilateralFilter(img, d=9, sigmaColor=200, sigmaSpace=200)
-    cartoon = cv2.bitwise_and(color, color, mask=edges)
-    
-    result_path = os.path.join(app.config["RESULT_FOLDER"], "cartoonized_output.png")
-    Image.fromarray(cartoon).save(result_path)
-    
-    return result_path
+    path = os.path.join(UPLOAD_FOLDER, f"{uuid.uuid4().hex}{extension}")
+    file.save(path)
+    return path
+
+
+def remove_old_results():
+    cutoff = time.time() - RESULT_MAX_AGE_SECONDS
+    for name in os.listdir(RESULT_FOLDER):
+        path = os.path.join(RESULT_FOLDER, name)
+        try:
+            if os.path.isfile(path) and os.path.getmtime(path) < cutoff:
+                os.remove(path)
+        except OSError:
+            pass
+
+
+def run_tool(fn, prefix, fields=("content",), **options):
+    """Save the uploads, run an effect on them and return the result as JSON.
+
+    Every result gets its own random filename, so simultaneous users never
+    overwrite each other and browsers never show a stale cached image.
+    Uploads are deleted as soon as the effect has run.
+    """
+    paths = []
+    try:
+        for field in fields:
+            paths.append(save_upload(field))
+        image = fn(*paths, **options)
+
+        remove_old_results()
+        result_name = f"{prefix}_{uuid.uuid4().hex}.png"
+        image.save(os.path.join(RESULT_FOLDER, result_name))
+        return jsonify(
+            {
+                "result_img": result_name,
+                "result_url": f"/static/results/{result_name}",
+                "width": image.width,
+                "height": image.height,
+            }
+        )
+    except UploadError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except (UnidentifiedImageError, OSError):
+        return jsonify({"error": "That file could not be read as an image."}), 400
+    except ModelUnavailable as exc:
+        return jsonify({"error": str(exc)}), 503
+    except Exception:
+        app.logger.exception("Tool %s failed", prefix)
+        return jsonify({"error": "Something went wrong while processing the image."}), 500
+    finally:
+        for path in paths:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+
+def choice(name, allowed, default):
+    value = request.form.get(name, default)
+    return value if value in allowed else default
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def too_large(_error):
+    return jsonify({"error": f"Images must be {MAX_UPLOAD_MB} MB or smaller."}), 413
+
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
+
 
 @app.route("/stylize", methods=["POST"])
 def process_style_transfer():
-    if "content" not in request.files or "style" not in request.files:
-        return jsonify({"error": "Missing file(s)"}), 400
-    
-    content_file = request.files["content"]
-    style_file = request.files["style"]
+    return run_tool(effects.stylize, "stylized", fields=("content", "style"))
 
-    content_filename = secure_filename(content_file.filename)
-    style_filename = secure_filename(style_file.filename)
-    content_path = os.path.join(app.config["UPLOAD_FOLDER"], content_filename)
-    style_path = os.path.join(app.config["UPLOAD_FOLDER"], style_filename)
-
-    content_file.save(content_path)
-    style_file.save(style_path)
-
-    result_path = stylize_image(content_path, style_path)
-    return jsonify({"result_img": os.path.basename(result_path)})
 
 @app.route("/cartoonize", methods=["POST"])
 def process_cartoonization():
-    if "content" not in request.files:
-        return jsonify({"error": "Missing file"}), 400
-    
-    content_file = request.files["content"]
-    content_filename = secure_filename(content_file.filename)
-    content_path = os.path.join(app.config["UPLOAD_FOLDER"], content_filename)
-    
-    content_file.save(content_path)
-    result_path = cartoonize_image(content_path)
-    
-    return jsonify({"result_img": os.path.basename(result_path)})
+    style = choice("style", {"classic", "anime"}, "classic")
+    return run_tool(effects.cartoonize, "cartoon", style=style)
+
+
+@app.route("/remove-background", methods=["POST"])
+def process_background_removal():
+    background = choice("background", {"transparent", "white", "black", "blur"}, "transparent")
+    return run_tool(effects.remove_background, "cutout", background=background)
+
+
+@app.route("/upscale", methods=["POST"])
+def process_upscale():
+    scale = int(choice("scale", {"2", "4"}, "2"))
+    quality = choice("quality", {"fast", "sharp"}, "fast")
+    return run_tool(effects.upscale, "upscaled", scale=scale, quality=quality)
+
+
+@app.route("/sketch", methods=["POST"])
+def process_sketch():
+    effect = choice("effect", {"pencil", "color-pencil", "watercolor"}, "pencil")
+    return run_tool(effects.artistic, "sketch", effect=effect)
+
+
+@app.route("/colorize", methods=["POST"])
+def process_colorize():
+    return run_tool(effects.colorize, "colorized")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
