@@ -40,6 +40,14 @@ The frontend expects the backend at `http://127.0.0.1:5000`. To use another addr
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/4cba3932-a11e-4ce8-b6d7-d7643f1113b3)
-![image](https://github.com/user-attachments/assets/e75b9c8c-0424-4ee9-acb3-202f725af76c)
-![image](https://github.com/user-attachments/assets/17541979-f11b-410d-8214-b233570ff63a)
+Home page, with a live before/after preview of the effects:
+
+![Home page](docs/screenshots/home.jpg)
+
+Cartoonize with the anime look:
+
+![Cartoonize tool showing an anime-style result](docs/screenshots/studio-cartoonize.jpg)
+
+Remove background with a transparent result:
+
+![Remove background tool showing a cut-out result](docs/screenshots/studio-remove-background.jpg)
